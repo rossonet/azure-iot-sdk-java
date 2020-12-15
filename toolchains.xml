@@ -1,0 +1,42 @@
+<toolchains>
+    <toolchain>
+        <type>jdk</type>
+        <provides>
+            <version>12</version>
+            <vendor>openjdk</vendor>
+        </provides>
+        <configuration>
+            <jdkHome>C:/Program Files/Java/jdk-12.0.2</jdkHome>
+        </configuration>
+    </toolchain>
+    <toolchain>
+        <type>jdk</type>
+        <provides>
+            <version>11</version>
+            <vendor>zulu</vendor>
+        </provides>
+        <configuration>
+            <jdkHome>C:/Program Files/Zulu/zulu-11</jdkHome>
+        </configuration>
+    </toolchain>
+    <toolchain>
+        <type>jdk</type>
+        <provides>
+            <version>8</version>
+            <vendor>zulu</vendor>
+        </provides>
+        <configuration>
+            <jdkHome>C:/Program Files/Zulu/zulu-8</jdkHome>
+        </configuration>
+    </toolchain>
+    <toolchain>
+        <type>jdk</type>
+        <provides>
+            <version>9</version>
+            <vendor>sun</vendor>
+        </provides>
+        <configuration>
+            <jdkHome>C:/Program Files/Java/jdk-9</jdkHome>
+        </configuration>
+    </toolchain>
+</toolchains>
