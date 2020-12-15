@@ -9,6 +9,8 @@
         <artifactId>iot-sdk-java</artifactId>
         <version>0.26.0</version>
     </parent>
+    <properties>
+            </properties>
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.microsoft.azure.sdk.iot.provisioning</groupId>
     <artifactId>provisioning</artifactId>
