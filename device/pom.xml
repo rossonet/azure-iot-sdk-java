@@ -18,7 +18,6 @@
     </developers>
     <modules>
         <module>iot-device-client</module>
-        <module>iot-device-samples</module>
     </modules>
     <build>
         <plugins>

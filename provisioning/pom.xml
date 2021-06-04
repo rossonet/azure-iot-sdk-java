@@ -21,7 +21,6 @@
         <module>provisioning-device-client</module>
         <module>provisioning-service-client</module>
         <module>security</module>
-        <module>provisioning-samples</module>
         <module>provisioning-tools</module>
     </modules>
 </project>

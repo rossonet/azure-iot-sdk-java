@@ -18,7 +18,6 @@
     </developers>
     <modules>
         <module>iot-service-client</module>
-        <module>iot-service-samples</module>
     </modules>
     <build>
         <plugins>
