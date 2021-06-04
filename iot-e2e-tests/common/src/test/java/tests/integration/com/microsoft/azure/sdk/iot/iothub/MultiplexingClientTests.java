@@ -240,6 +240,21 @@ public class MultiplexingClientTests extends IntegrationTest
     }
 
     @Test
+    public void repro1() throws Exception { repro(); }
+
+    @Test
+    public void repro2() throws Exception { repro(); }
+
+    @Test
+    public void repro3() throws Exception { repro(); }
+
+    @Test
+    public void repro4() throws Exception { repro(); }
+
+    @Test
+    public void repro5() throws Exception { repro(); }
+
+
     public void repro() throws Exception
     {
         testInstance.setup(2);
