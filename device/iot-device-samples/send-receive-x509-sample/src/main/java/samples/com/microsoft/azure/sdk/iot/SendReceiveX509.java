@@ -6,6 +6,7 @@ package samples.com.microsoft.azure.sdk.iot;
 import com.microsoft.azure.sdk.iot.device.*;
 import com.microsoft.azure.sdk.iot.device.transport.IotHubConnectionStatus;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
