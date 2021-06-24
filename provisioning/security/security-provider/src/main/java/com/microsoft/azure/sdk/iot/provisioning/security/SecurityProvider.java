@@ -141,11 +141,9 @@ public abstract class SecurityProvider
     KeyStore getKeyStoreWithTrustedCerts() throws NoSuchAlgorithmException, IOException, CertificateException, KeyStoreException
     {
         // create keystore
-        //SRS_SecurityClient_25_001: [ This method shall retrieve the default instance of keystore using default algorithm type. ]
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
         keyStore.load(null);
 
-        //SRS_SecurityClient_25_002: [ This method shall retrieve the default CertificateFactory instance. ]
         CertificateFactory certFactory = CertificateFactory.getInstance(DEFAULT_CERT_INSTANCE);
         Collection<? extends Certificate> trustedCert;
         try (InputStream certStreamArray = new ByteArrayInputStream(DEFAULT_TRUSTED_CERT.getBytes()))
@@ -155,7 +153,6 @@ public abstract class SecurityProvider
 
         for (Certificate c : trustedCert)
         {
-            //SRS_SecurityClient_25_003: [ This method shall load all the trusted certificates to the keystore. ]
             keyStore.setCertificateEntry(TRUSTED_CERT_ALIAS + UUID.randomUUID(), c);
         }
 

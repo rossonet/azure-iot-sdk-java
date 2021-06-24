@@ -16,6 +16,7 @@ import com.microsoft.azure.sdk.iot.device.exceptions.MultiplexingDeviceUnauthori
 import com.microsoft.azure.sdk.iot.device.exceptions.ProtocolException;
 import com.microsoft.azure.sdk.iot.device.exceptions.TransportException;
 import com.microsoft.azure.sdk.iot.device.transport.*;
+import com.microsoft.azure.sdk.iot.provisioning.security.exceptions.SecurityProviderException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.messaging.Accepted;
@@ -398,7 +399,7 @@ public final class AmqpsIotHubConnection extends BaseHandler implements IotHubTr
             domain.init(SslDomain.Mode.CLIENT);
             transport.ssl(domain);
         }
-        catch (IOException | CertificateException | NoSuchAlgorithmException | KeyStoreException | KeyManagementException e)
+        catch (SecurityProviderException e)
         {
             this.savedException = new TransportException(e);
             log.error("Encountered an exception while setting ssl domain for the amqp connection", this.savedException);

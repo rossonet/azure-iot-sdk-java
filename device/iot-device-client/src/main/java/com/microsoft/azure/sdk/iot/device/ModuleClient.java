@@ -6,6 +6,7 @@
 package com.microsoft.azure.sdk.iot.device;
 
 
+import com.microsoft.azure.sdk.iot.deps.auth.IotHubSSLContext;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.DeviceMethodCallback;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.PropertyCallBack;
 import com.microsoft.azure.sdk.iot.device.DeviceTwin.TwinPropertiesCallback;
@@ -27,7 +28,10 @@ import lombok.extern.slf4j.Slf4j;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.util.Map;
 
 /**
@@ -109,46 +113,6 @@ public class ModuleClient extends InternalClient
     {
         super(new IotHubConnectionString(connectionString), protocol, SEND_PERIOD_MILLIS, getReceivePeriod(protocol), clientOptions);
         commonConstructorVerifications(protocol, this.config);
-    }
-
-    /**
-     * Create a module client instance that uses x509 authentication.
-     *
-     * <p>Note! Communication from a module to another EdgeHub using x509 authentication is not currently supported and
-     * the service will always return "UNAUTHORIZED"</p>
-     *
-     * <p>Communication from a module directly to the IotHub does support x509 authentication, though.</p>
-     * @param connectionString The connection string for the edge module to connect to. Must be in format
-     *                         HostName=xxxx;deviceId=xxxx;SharedAccessKey=
-     *                         xxxx;moduleId=xxxx;
-     *
-     *                         or
-     *
-     *                         HostName=xxxx;DeviceId=xxxx;SharedAccessKey=
-     *                         xxxx;moduleId=xxxx;HostNameGateway=xxxx
-     * @param protocol The protocol to communicate with
-     * @param publicKeyCertificate The PEM formatted string for the public key certificate or the system path to the file containing the PEM.
-     * @param isCertificatePath 'false' if the publicKeyCertificate argument is a path to the PEM, and 'true' if it is the PEM string itself,
-     * @param privateKey The PEM formatted string for the private key or the system path to the file containing the PEM.
-     * @param isPrivateKeyPath 'false' if the privateKey argument is a path to the PEM, and 'true' if it is the PEM string itself,
-     * @throws URISyntaxException If the connString cannot be parsed
-     * @throws ModuleClientException if any other exception occurs while building the module client
-     * @throws URISyntaxException if the hostname in the connection string is not a valid URI
-     * @deprecated For x509 authentication, use {@link #ModuleClient(String, IotHubClientProtocol, ClientOptions)} and provide
-     * an SSLContext instance in the {@link ClientOptions} instance. For a sample on how to build this SSLContext,
-     * see <a href="https://github.com/Azure/azure-iot-sdk-java/blob/master/device/iot-device-samples/send-event-x509/src/main/java/samples/com/microsoft/azure/sdk/iot/SendEventX509.java">this code</a> which references
-     * a helper class for building SSLContext objects for x509 authentication as well as for SAS based authentication.
-     * When not using this deprecated constructor, you can safely exclude the Bouncycastle dependencies that this library declares.
-     * See <a href="https://github.com/Azure/azure-iot-sdk-java/blob/master/device/iot-device-samples/send-event-x509/pom.xml">this pom.xml</a> for an example of how to do this.
-     */
-    @Deprecated
-    public ModuleClient(String connectionString, IotHubClientProtocol protocol, String publicKeyCertificate, boolean isCertificatePath, String privateKey, boolean isPrivateKeyPath) throws ModuleClientException, URISyntaxException
-    {
-        super(new IotHubConnectionString(connectionString), protocol, publicKeyCertificate, isCertificatePath, privateKey, isPrivateKeyPath, SEND_PERIOD_MILLIS, getReceivePeriod(protocol));
-
-        //Codes_SRS_MODULECLIENT_34_008: [If the provided protocol is not MQTT, AMQPS, MQTT_WS, or AMQPS_WS, this function shall throw an UnsupportedOperationException.]
-        //Codes_SRS_MODULECLIENT_34_009: [If the provided connection string does not contain a module id, this function shall throw an IllegalArgumentException.]
-        commonConstructorVerifications(protocol, this.getConfig());
     }
 
     /**
@@ -258,7 +222,41 @@ public class ModuleClient extends InternalClient
         {
             log.debug("Creating module client with the provided connection string");
 
-            //Codes_SRS_MODULECLIENT_34_020: [If an edgehub or iothub connection string is present, this function shall create a module client instance using that connection string and the provided protocol.]
+            //Check for a different default cert to be used
+            String alternativeDefaultTrustedCert = envVariables.get(EdgeCaCertificateFileVariableName);
+            SSLContext sslContext;
+            if (alternativeDefaultTrustedCert != null && !alternativeDefaultTrustedCert.isEmpty())
+            {
+                log.debug("Configuring module client to use the configured alternative trusted certificate");
+                try
+                {
+                    sslContext = IotHubSSLContext.getSSLContextFromFile(alternativeDefaultTrustedCert);
+                }
+                catch (CertificateException | IOException | KeyStoreException | NoSuchAlgorithmException | KeyManagementException e)
+                {
+                    throw new ModuleClientException("Failed to create an SSLContext instance from the provided trusted cert file path", e);
+                }
+            }
+            else
+            {
+                sslContext = new IotHubSSLContext().getSSLContext();
+            }
+
+            if (clientOptions == null)
+            {
+                clientOptions = new ClientOptions();
+            }
+
+            // only override the SSLContext if the user didn't set it
+            if (clientOptions.sslContext == null)
+            {
+                clientOptions.sslContext = sslContext;
+            }
+            else
+            {
+                log.debug("Ignoring trusted certs saved in {} environment variable because custom SSLContext was provided in client options.", EdgeCaCertificateFileVariableName);
+            }
+
             ModuleClient moduleClient;
             try
             {
@@ -267,16 +265,6 @@ public class ModuleClient extends InternalClient
             catch (URISyntaxException e)
             {
                 throw new ModuleClientException("Could not create module client", e);
-            }
-
-            //Check for a different default cert to be used
-            String alternativeDefaultTrustedCert = envVariables.get(EdgeCaCertificateFileVariableName);
-            if (alternativeDefaultTrustedCert != null && !alternativeDefaultTrustedCert.isEmpty())
-            {
-                log.debug("Configuring module client to use the configured alternative trusted certificate");
-                //Codes_SRS_MODULECLIENT_34_031: [If an alternative default trusted cert is saved in the environment
-                // variables, this function shall set that trusted cert in the created module client.]
-                moduleClient.setOption_SetCertificatePath(alternativeDefaultTrustedCert);
             }
 
             return moduleClient;
@@ -343,25 +331,25 @@ public class ModuleClient extends InternalClient
 
             try
             {
-                //Codes_SRS_MODULECLIENT_34_017: [This function shall create an authentication provider using the created
-                // signature provider, and the environment variables for deviceid, moduleid, hostname, gatewayhostname,
-                // and the default time for tokens to live and the default sas token buffer time.]
-                IotHubAuthenticationProvider iotHubAuthenticationProvider = IotHubSasTokenHsmAuthenticationProvider.create(signatureProvider, deviceId, moduleId, hostname, gatewayHostname, generationId, DEFAULT_SAS_TOKEN_TIME_TO_LIVE_SECONDS, DEFAULT_SAS_TOKEN_BUFFER_PERCENTAGE);
-
-                //Codes_SRS_MODULECLIENT_34_018: [This function shall return a new ModuleClient instance built from the created authentication provider and the provided protocol.]
-                ModuleClient moduleClient = new ModuleClient(iotHubAuthenticationProvider, protocol, SEND_PERIOD_MILLIS, getReceivePeriod(protocol));
-
+                SSLContext sslContext;
                 if (gatewayHostname != null && !gatewayHostname.isEmpty())
                 {
-                    //Codes_SRS_MODULECLIENT_34_032: [This function shall retrieve the trust bundle from the hsm and set them in the module client.]
                     TrustBundleProvider trustBundleProvider = new HttpsHsmTrustBundleProvider();
                     String trustCertificates = trustBundleProvider.getTrustBundleCerts(edgedUri, DEFAULT_API_VERSION);
-                    moduleClient.setTrustedCertificates(trustCertificates);
+                    sslContext = IotHubSSLContext.getSSLContextFromString(trustCertificates);
                 }
+                else
+                {
+                    sslContext = new IotHubSSLContext().getSSLContext();
+                }
+
+                IotHubAuthenticationProvider iotHubAuthenticationProvider = IotHubSasTokenHsmAuthenticationProvider.create(signatureProvider, deviceId, moduleId, hostname, gatewayHostname, generationId, DEFAULT_SAS_TOKEN_TIME_TO_LIVE_SECONDS, DEFAULT_SAS_TOKEN_BUFFER_PERCENTAGE, sslContext);
+
+                ModuleClient moduleClient = new ModuleClient(iotHubAuthenticationProvider, protocol, SEND_PERIOD_MILLIS, getReceivePeriod(protocol));
 
                 return moduleClient;
             }
-            catch (IOException | TransportException | HsmException | URISyntaxException e)
+            catch (IOException | TransportException | HsmException | URISyntaxException | CertificateException | NoSuchAlgorithmException | KeyStoreException | KeyManagementException e)
             {
                 throw new ModuleClientException(e);
             }

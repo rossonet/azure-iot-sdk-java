@@ -247,46 +247,6 @@ public final class DeviceClient extends InternalClient implements Closeable
     }
 
     /**
-     * Constructor that uses x509 authentication for communicating with IotHub
-     *
-     * @param connString the connection string for the x509 device to connect as (format: "HostName=...;DeviceId=...;x509=true")
-     * @param protocol the protocol to use when communicating with IotHub
-     * @param publicKeyCertificate the PEM formatted public key certificate or the path to a PEM formatted public key certificate file.
-     *                             Append if there is any intermediate or chained certificates to the end of the public certificate file in the following format:
-     *                             -----BEGIN CERTIFICATE-----
-     *                             (Primary SSL certificate)
-     *                             -----END CERTIFICATE-----
-     *                             ----BEGIN CERTIFICATE-----
-     *                             (Intermediate certificate)
-     *                             -----END CERTIFICATE-----
-     *                             -----BEGIN CERTIFICATE-----
-     *                             (Root certificate)
-     *                             -----END CERTIFICATE-----
-     * @param isCertificatePath if the provided publicKeyCertificate is a path to a file containing the PEM formatted public key certificate
-     * @param privateKey the PEM formatted private key or the path to a PEM formatted private key file
-     * @param isPrivateKeyPath if the provided privateKey is a path to a file containing the PEM formatted private key
-     * @deprecated For x509 authentication, use {@link #DeviceClient(String, IotHubClientProtocol, ClientOptions)} and provide
-     * an SSLContext instance in the {@link ClientOptions} instance. For a sample on how to build this SSLContext,
-     * see <a href="https://github.com/Azure/azure-iot-sdk-java/blob/master/device/iot-device-samples/send-event-x509/src/main/java/samples/com/microsoft/azure/sdk/iot/SendEventX509.java">this code</a> which references
-     * a helper class for building SSLContext objects for x509 authentication as well as for SAS based authentication.
-     * When not using this deprecated constructor, you can safely exclude the Bouncycastle dependencies that this library declares.
-     * See <a href="https://github.com/Azure/azure-iot-sdk-java/blob/master/device/iot-device-samples/send-event-x509/pom.xml">this pom.xml</a> for an example of how to do this.
-     * @throws URISyntaxException if the hostname in the connection string is not a valid URI
-     */
-    @Deprecated
-    public DeviceClient(String connString, IotHubClientProtocol protocol, String publicKeyCertificate, boolean isCertificatePath, String privateKey, boolean isPrivateKeyPath) throws URISyntaxException
-    {
-        // Codes_SRS_DEVICECLIENT_34_058: [The constructor shall interpret the connection string as a set of key-value pairs delimited by ';', using the object IotHubConnectionString.]
-        // Codes_SRS_DEVICECLIENT_34_074: [If the provided connection string contains a module id field, this function shall throw an UnsupportedOperationException.]
-        super(new IotHubConnectionString(connString), protocol, publicKeyCertificate, isCertificatePath, privateKey, isPrivateKeyPath, SEND_PERIOD_MILLIS, getReceivePeriod(protocol));
-        commonConstructorVerifications();
-
-        // Codes_SRS_DEVICECLIENT_12_013: [The constructor shall set the connection type to SINGLE_CLIENT.]
-        // Codes_SRS_DEVICECLIENT_12_014: [The constructor shall set the transportClient to null.]
-        commonConstructorSetup();
-    }
-
-    /**
      * Creates a device client that uses the provided SSLContext for SSL negotiation
      * @param connString the connection string for the device. May be an x509 connection string (format: "HostName=...;DeviceId=...;x509=true")
      *                   and it may be a SAS connection string (format: "HostName=...;DeviceId=...;SharedAccessKey=..."). If
@@ -782,11 +742,6 @@ public final class DeviceClient extends InternalClient implements Closeable
      *	      in case of MQTT and AMQP protocols, this option specifies the interval in milliseconds
      *	      between spawning a thread that dequeues a message from the SDK's queue of received messages.
      *
-     *	    - <b>SetCertificatePath</b> - this option is applicable only
-     *	      when the transport configured with this client is AMQP. This
-     *	      option specifies the path to the certificate used to verify peer.
-     *	      The value is expected to be of type {@code String}.
-     *
      *      - <b>SetSASTokenExpiryTime</b> - this option is applicable for HTTP/
      *         AMQP/MQTT. This option specifies the interval in seconds after which
      *         SASToken expires. If the transport is already open then setting this
@@ -858,37 +813,6 @@ public final class DeviceClient extends InternalClient implements Closeable
                     // Codes_SRS_DEVICECLIENT_12_022: [If the client configured to use TransportClient the SetSendInterval shall throw IllegalStateException.]
                     throw new IllegalStateException("Setting send interval is not supported for single client if using TransportClient. " +
                             "Use TransportClient.setSendInterval() instead.");
-                }
-            }
-            // Codes_SRS_DEVICECLIENT_25_019: ["SetCertificatePath" - path to the certificate to verify peer.]
-            case SET_CERTIFICATE_PATH:
-            {
-                if (this.ioTHubConnectionType == IoTHubConnectionType.USE_TRANSPORTCLIENT)
-                {
-                    if (this.transportClient.getTransportClientState() == TransportClient.TransportClientState.OPENED)
-                    {
-                        // Codes_SRS_DEVICECLIENT_12_029: [*SetCertificatePath" shall throw if the transportClient or deviceIO already open, otherwise set the path on the config.]
-                        throw new IllegalStateException("setOption " + SET_CERTIFICATE_PATH + " only works when the transport is closed");
-                    }
-                    else
-                    {
-                        // Codes_SRS_DEVICECLIENT_12_030: [*SetCertificatePath" shall udate the config on transportClient if tranportClient used.]
-                        setOption_SetCertificatePath(value);
-                        return;
-                    }
-                }
-                break;
-            }
-            // Codes_SRS_DEVICECLIENT_34_043: ["SetCertificateAuthority" - set the certificate to verify peer.]
-            case SET_CERTIFICATE_AUTHORITY:
-            {
-                if (this.ioTHubConnectionType == IoTHubConnectionType.USE_TRANSPORTCLIENT)
-                {
-                    if (this.transportClient.getTransportClientState() == TransportClient.TransportClientState.OPENED)
-                    {
-                        // Codes_SRS_DEVICECLIENT_34_042: [If this function is called with the SET_CERTIFICATE_AUTHORITY option, and is using an open transport client, this function shall throw an IllegalStateException]
-                        throw new IllegalStateException("setOption " + SET_CERTIFICATE_PATH + " only works when the transport is closed");
-                    }
                 }
                 break;
             }
