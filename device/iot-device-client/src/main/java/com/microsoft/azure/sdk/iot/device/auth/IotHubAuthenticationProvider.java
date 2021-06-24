@@ -30,27 +30,27 @@ public abstract class IotHubAuthenticationProvider
 
     public IotHubAuthenticationProvider(String hostname, String gatewayHostname, String deviceId, String moduleId)
     {
-        Objects.requireNonNull(hostname);
-        Objects.requireNonNull(deviceId);
-
-        this.hostname = hostname;
-        this.gatewayHostname = gatewayHostname;
-        this.deviceId = deviceId;
-        this.moduleId = moduleId;
-        this.iotHubSSLContext = new IotHubSSLContext();
+        this(hostname, gatewayHostname, deviceId, moduleId, null);
     }
 
     public IotHubAuthenticationProvider(String hostname, String gatewayHostname, String deviceId, String moduleId, SSLContext sslContext)
     {
         Objects.requireNonNull(hostname);
         Objects.requireNonNull(deviceId);
-        Objects.requireNonNull(sslContext);
 
         this.hostname = hostname;
         this.gatewayHostname = gatewayHostname;
         this.deviceId = deviceId;
         this.moduleId = moduleId;
-        this.iotHubSSLContext = new IotHubSSLContext(sslContext);
+
+        if (sslContext == null)
+        {
+            this.iotHubSSLContext = new IotHubSSLContext();
+        }
+        else
+        {
+            this.iotHubSSLContext = new IotHubSSLContext(sslContext);
+        }
     }
 
     public SSLContext getSSLContext() throws SecurityProviderException
