@@ -9,6 +9,7 @@ import com.microsoft.azure.sdk.iot.device.transport.IotHubConnectionStatus;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -149,7 +150,7 @@ public class SendReceiveX509
      * args[1] = number of requests to send
      * args[2] = protocol (optional, one of 'mqtt' or 'amqps' or 'https' or 'amqps_ws')
      */
-    public static void main(String[] args) throws IOException, URISyntaxException
+    public static void main(String[] args) throws IOException, URISyntaxException, GeneralSecurityException
     {
         System.out.println("Starting...");
         System.out.println("Beginning setup.");
