@@ -66,27 +66,19 @@ public class SSLContextBuilder
     }
 
     /**
-     * Build the default SSLContext. Trusts the iot hub base certificates, but can only be used for sas auth
+     * Build the default SSLContext that trusts the certificates installed on your device. Since no private keys are
+     * loaded into this SSLContext, it can only be used for Symmetric key-based authenticated connections.
      * @return the default SSLContext
-     * @throws NoSuchAlgorithmException If the SSLContext cannot be created because of a missing algorithm
-     * @throws KeyManagementException If the SSLContext cannot be initiated
-     * @throws CertificateException If certificate creation fails
-     * @throws KeyStoreException If the keystore operations fail
-     * @throws IOException If the default certificate fails to be read
+     * @throws NoSuchAlgorithmException If the SSLContext cannot be created because of a missing algorithm.
+     * @throws KeyManagementException If the SSLContext cannot be initialized.
      */
-    public static SSLContext buildSSLContext() throws NoSuchAlgorithmException, KeyManagementException, CertificateException, KeyStoreException, IOException
+    public static SSLContext buildSSLContext() throws NoSuchAlgorithmException, KeyManagementException
     {
-        //Codes_SRS_IOTHUBSSLCONTEXT_25_002: [The constructor shall create default SSL context for TLSv1.2.]
         SSLContext sslContext = SSLContext.getInstance(SSL_CONTEXT_INSTANCE);
 
-        //Codes_SRS_IOTHUBSSLCONTEXT_25_003: [The constructor shall create default TrustManagerFactory with the default algorithm.]
-        //Codes_SRS_IOTHUBSSLCONTEXT_25_004: [The constructor shall create default KeyStore instance with the default type and initialize it.]
-        //Codes_SRS_IOTHUBSSLCONTEXT_25_005: [The constructor shall set the above created certificateManager into a keystore.]
-        //Codes_SRS_IOTHUBSSLCONTEXT_25_006: [The constructor shall initialize TrustManagerFactory with the above initialized keystore.]
-        //Codes_SRS_IOTHUBSSLCONTEXT_25_007: [The constructor shall initialize SSL context with the above initialized TrustManagerFactory and a new secure random.]
-        TrustManagerFactory trustManagerFactory = generateTrustManagerFactory(null);
-
-        sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
+        // Initializing the SSLContext with null keyManagers and null trustManagers makes it so the device's default
+        // trusted certificates are loaded, and no private keys are loaded.
+        sslContext.init(null, null, new SecureRandom());
 
         return sslContext;
     }
@@ -149,7 +141,7 @@ public class SSLContextBuilder
     }
 
     private static TrustManagerFactory generateTrustManagerFactory(KeyStore trustKeyStore)
-            throws NoSuchAlgorithmException, KeyStoreException, IOException, CertificateException
+        throws NoSuchAlgorithmException, KeyStoreException, IOException, CertificateException
     {
         if (trustKeyStore == null)
         {

@@ -66,27 +66,32 @@ public class SSLContextBuilder
 
         sslContext.init(kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), new SecureRandom());
 
+        // optionally, you can provide null for the TrustManagers here to use the default trusted certs installed on
+        // your device rather than enumerating them in code.
+        //sslContext.init(kmf.getKeyManagers(), null, new SecureRandom());
+
         return sslContext;
     }
 
     /**
-     * Build the default SSLContext. Trusts the iot hub base certificates, but can only be used for sas auth
+     * Build the default SSLContext that trusts the certificates installed on your device. Since no private keys are
+     * loaded into this SSLContext, it can only be used for Symmetric key-based authenticated connections.
      * @return the default SSLContext
-     * @throws NoSuchAlgorithmException If the SSLContext cannot be created because of a missing algorithm
-     * @throws KeyManagementException If the SSLContext cannot be initiated
-     * @throws CertificateException If certificate creation fails
-     * @throws KeyStoreException If the keystore operations fail
-     * @throws IOException If the default certificate fails to be read
+     * @throws NoSuchAlgorithmException If the SSLContext cannot be created because of a missing algorithm.
+     * @throws KeyManagementException If the SSLContext cannot be initialized.
      */
-    public static SSLContext buildSSLContext() throws NoSuchAlgorithmException, KeyManagementException, CertificateException, KeyStoreException, IOException
+    public static SSLContext buildSSLContext() throws NoSuchAlgorithmException, KeyManagementException
     {
         SSLContext sslContext = SSLContext.getInstance(SSL_CONTEXT_INSTANCE);
-        TrustManagerFactory trustManagerFactory = generateTrustManagerFactory(null);
-        sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
+
+        // Initializing the SSLContext with null keyManagers and null trustManagers makes it so the device's default
+        // trusted certificates are loaded, and no private keys are loaded.
+        sslContext.init(null, null, new SecureRandom());
+
         return sslContext;
     }
 
-    public static RSAPrivateKey parsePrivateKeyString(String privateKeyPEM) throws IOException, GeneralSecurityException
+    public static RSAPrivateKey parsePrivateKeyString(String privateKeyPEM) throws GeneralSecurityException
     {
         if (privateKeyPEM == null || privateKeyPEM.isEmpty())
         {

@@ -35,7 +35,8 @@ public class IotHubSSLContext
         try
         {
             // Only loads public certs. Private keys are in password protected keystores,
-            // so they can't be retrieved in this constructor.
+            // so they can't be retrieved in this constructor. Because no private keys are loaded,
+            // this SSLContext can only be used in connections that are authenticated via symmetric keys.
             this.sslContext = SSLContext.getInstance(SSL_CONTEXT_INSTANCE);
 
             // Initializing the SSLContext with null keyManagers and null trustManagers makes it so the device's default
