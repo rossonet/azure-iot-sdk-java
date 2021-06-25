@@ -36,11 +36,15 @@ public class IotHubSSLContext
         {
             // Only loads public certs. Private keys are in password protected keystores,
             // so they can't be retrieved in this constructor.
-            this.sslContext = SSLContext.getDefault();
+            this.sslContext = SSLContext.getInstance(SSL_CONTEXT_INSTANCE);
+
+            // Initializing the SSLContext with null keyManagers and null trustManagers makes it so the device's default
+            // trusted certificates are loaded, and no private keys are loaded.
+            this.sslContext.init(null, null, new SecureRandom());
         }
-        catch (NoSuchAlgorithmException e)
+        catch (NoSuchAlgorithmException | KeyManagementException e)
         {
-            throw new IllegalStateException("Device does not support TLSv1.2");
+            throw new IllegalStateException("Failed to build the default SSLContext instance", e);
         }
     }
 
