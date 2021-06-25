@@ -66,10 +66,6 @@ public class SSLContextBuilder
 
         sslContext.init(kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), new SecureRandom());
 
-        // optionally, you can provide null for the TrustManagers here to use the default trusted certs installed on
-        // your device rather than enumerating them in code.
-        //sslContext.init(kmf.getKeyManagers(), null, new SecureRandom());
-
         return sslContext;
     }
 
