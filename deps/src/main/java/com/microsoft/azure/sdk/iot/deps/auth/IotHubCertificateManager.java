@@ -61,6 +61,26 @@ public class IotHubCertificateManager
                     "YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk\r\n" +
                     "CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=\r\n" +
                     "-----END CERTIFICATE-----\r\n" +
+                    /* DigiCert Global CA G3 */
+                    "-----BEGIN CERTIFICATE-----\r\n" +
+                    "MIIDAzCCAomgAwIBAgIQBYjADIzAxXdmfmTLqIurSTAKBggqhkjOPQQDAzBhMQsw\r\n" +
+                    "CQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3d3cu\r\n" +
+                    "ZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBHMzAe\r\n" +
+                    "Fw0xMzA4MDExMjAwMDBaFw0yODA4MDExMjAwMDBaMEQxCzAJBgNVBAYTAlVTMRUw\r\n" +
+                    "EwYDVQQKEwxEaWdpQ2VydCBJbmMxHjAcBgNVBAMTFURpZ2lDZXJ0IEdsb2JhbCBD\r\n" +
+                    "QSBHMzB2MBAGByqGSM49AgEGBSuBBAAiA2IABGY9nqbRBXwQO+2i5tz0bMPnXF/p\r\n" +
+                    "aT+G2x/Cfk22Ga8rAP8LlrJaUK8Wguo1B5cq/eQY83hwiTsQgCFz+uSjKbU9TrVt\r\n" +
+                    "nD+hAsQdmWUlMpzpd1ZwPnCR1+mg4jTsONHa8KOCASEwggEdMBIGA1UdEwEB/wQI\r\n" +
+                    "MAYBAf8CAQAwDgYDVR0PAQH/BAQDAgGGMDQGCCsGAQUFBwEBBCgwJjAkBggrBgEF\r\n" +
+                    "BQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEIGA1UdHwQ7MDkwN6A1oDOG\r\n" +
+                    "MWh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEdsb2JhbFJvb3RHMy5j\r\n" +
+                    "cmwwPQYDVR0gBDYwNDAyBgRVHSAAMCowKAYIKwYBBQUHAgEWHGh0dHBzOi8vd3d3\r\n" +
+                    "LmRpZ2ljZXJ0LmNvbS9DUFMwHQYDVR0OBBYEFBsAey6NpdNhIQxdVjUDP9LNcZgK\r\n" +
+                    "MB8GA1UdIwQYMBaAFLPbSKT5ocXYrjZBzBFjaWIpvEvGMAoGCCqGSM49BAMDA2gA\r\n" +
+                    "MGUCMQDuo99HhMCfVcynjSsjBZR9FDFHzMxl/wEZSg2vdjHyiKYBa52Ok9LWR2WG\r\n" +
+                    "Ss3h4jkCME8wZqBwYpkfJh9ziZrgEkbUmpsLg6E2DLlOyLfeS/znes2wDjQYaTyh\r\n" +
+                    "EbyxjtCg/w==\r\n" +
+                    "-----END CERTIFICATE-----\r\n" +
                     /* Baltimore */
                     "-----BEGIN CERTIFICATE-----\r\n" +
                     "MIIDdzCCAl+gAwIBAgIEAgAAuTANBgkqhkiG9w0BAQUFADBaMQswCQYDVQQGEwJJ\r\n" +

@@ -48,7 +48,7 @@ public abstract class SecurityProviderX509 extends SecurityProvider
         }
     }
 
-    private TrustManager getDefaultX509TrustManager(KeyStore keyStore) throws NoSuchAlgorithmException, KeyStoreException, SecurityProviderException
+    public static TrustManager getDefaultX509TrustManager(KeyStore keyStore) throws NoSuchAlgorithmException, KeyStoreException, SecurityProviderException
     {
         // obtain X509 trust manager
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
@@ -65,7 +65,7 @@ public abstract class SecurityProviderX509 extends SecurityProvider
         throw new SecurityProviderException("Could not retrieve X509 trust manager");
     }
 
-    private KeyManager getDefaultX509KeyManager(KeyStore keyStore, String password) throws NoSuchAlgorithmException, KeyStoreException, UnrecoverableKeyException, SecurityProviderException
+    public static KeyManager getDefaultX509KeyManager(KeyStore keyStore, String password) throws NoSuchAlgorithmException, KeyStoreException, UnrecoverableKeyException, SecurityProviderException
     {
         // create key manager factory and obtain x509 key manager
 

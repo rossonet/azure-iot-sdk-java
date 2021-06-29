@@ -4,43 +4,42 @@
 package samples.com.microsoft.azure.sdk.iot;
 
 import com.microsoft.azure.sdk.iot.device.*;
+import com.microsoft.azure.sdk.iot.provisioning.security.SecurityProvider;
+import com.microsoft.azure.sdk.iot.provisioning.security.SecurityProviderX509;
+import com.microsoft.azure.sdk.iot.provisioning.security.exceptions.SecurityProviderException;
+import com.sun.xml.internal.org.jvnet.mimepull.CleanUpExecutorFactory;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
 
-import javax.net.ssl.SSLContext;
+import javax.net.ssl.*;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URISyntaxException;
-import java.security.GeneralSecurityException;
-import java.util.ArrayList;
-import java.util.List;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.*;
+
+import static org.apache.commons.codec.binary.Base64.encodeBase64String;
 
 /** Sends a number of event messages to an IoT Hub. */
 public class SendEventX509
 {
-    //PEM encoded representation of the public key certificate
-    private static final String publicKeyCertificateString =
-            "-----BEGIN CERTIFICATE-----\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "-----END CERTIFICATE-----\n";
-
-    //PEM encoded representation of the private key
-    private static final String privateKeyString =
-            "-----BEGIN EC PRIVATE KEY-----\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n" +
-            "-----END EC PRIVATE KEY-----\n";
-
+    static final String DEFAULT_TLS_PROTOCOL = "TLSv1.2";
+    private static final String ALIAS_CERT_ALIAS = "cert-alias";
     private  static final int D2C_MESSAGE_TIMEOUT = 2000; // 2 seconds
     private  static final List<String> failedMessageListOnClose = new ArrayList<>(); // List of messages that failed on close
-  
+
     protected static class EventCallback implements IotHubEventCallback
     {
         public void execute(IotHubStatusCode status, Object context)
@@ -65,8 +64,7 @@ public class SendEventX509
      * args[1] = number of requests to send
      * args[2] = IoT Hub protocol to use, optional and defaults to MQTT
      */
-    public static void main(String[] args) throws IOException, URISyntaxException, GeneralSecurityException
-    {
+    public static void main(String[] args) throws IOException, URISyntaxException, GeneralSecurityException, SecurityProviderException, OperatorCreationException {
         System.out.println("Starting...");
         System.out.println("Beginning setup.");
  
@@ -137,7 +135,26 @@ public class SendEventX509
         System.out.println("Successfully read input parameters.");
         System.out.format("Using communication protocol %s.\n", protocol.name());
 
-        SSLContext sslContext = SSLContextBuilder.buildSSLContext(publicKeyCertificateString, privateKeyString);
+        final GeneratedCert rootCert = X509CertificateGenerator.generateCertificateWithReturn("rootCert", null);
+        final GeneratedCert cert1 = X509CertificateGenerator.generateCertificateWithReturn("cert1", rootCert);
+        final GeneratedCert cert2 = X509CertificateGenerator.generateCertificateWithReturn("cert2", cert1);
+        final GeneratedCert deviceCert = X509CertificateGenerator.generateCertificateWithReturn("deviceCert", cert2);
+
+        // This is the thumbprint used for device created on portal
+        String thumbprint = deviceCert.x509ThumbPrint;
+
+        Collection<X509Certificate> signerCertificates = new LinkedList<X509Certificate>()
+        {
+            {
+                add(rootCert.certificate);
+                add(cert1.certificate);
+                add(cert2.certificate);
+            }
+        };
+
+        // Call method that returns generatedcert and create a collection of these certs
+
+        SSLContext sslContext = generateSSLContext(deviceCert.certificate, deviceCert.privateKey, signerCertificates);
         ClientOptions clientOptions = new ClientOptions();
         clientOptions.setSslContext(sslContext);
         DeviceClient client = new DeviceClient(connectionString, protocol, clientOptions);
@@ -149,7 +166,7 @@ public class SendEventX509
         System.out.println("Opened connection to IoT Hub.");
         System.out.println("Sending the following event messages:");
 
-        String deviceId = "MyJavaDevice";
+        String deviceId = "hello";
         double temperature;
         double humidity;
 
@@ -200,5 +217,48 @@ public class SendEventX509
         }
 
         System.out.println("Shutting down...");
+    }
+
+    public static SSLContext generateSSLContext(X509Certificate leafCertificate, Key leafPrivateKey, Collection<X509Certificate> signerCertificates) throws NoSuchProviderException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException, CertificateException, SecurityProviderException
+    {
+        if (leafCertificate == null || leafPrivateKey == null || signerCertificates == null)
+        {
+            //SRS_SecurityClientX509_25_006: [ This method shall throw IllegalArgumentException if input parameters are null. ]
+            throw new IllegalArgumentException("cert or private key cannot be null");
+        }
+
+        //SRS_SecurityClientX509_25_007: [ This method shall use random UUID as a password for keystore. ]
+        char[] password = SSLContextBuilder.generateTemporaryPassword();
+        //SRS_SecurityClientX509_25_008: [ This method shall create a TLSv1.2 instance. ]
+        SSLContext sslContext = SSLContext.getInstance(DEFAULT_TLS_PROTOCOL);
+        // Load Trusted certs to keystore and retrieve it.
+
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        keyStore.load(null);
+        keyStore.setCertificateEntry(ALIAS_CERT_ALIAS, leafCertificate);
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(keyStore, password);
+
+        TrustManagerFactory trustManagerFactory = SSLContextBuilder.generateTrustManagerFactory(keyStore);
+
+        // Load Alias cert and private key to key store
+        int noOfCerts = signerCertificates.size() + 1;
+        X509Certificate[] certs = new X509Certificate[noOfCerts];
+        int i = 0;
+        certs[i++] = leafCertificate;
+
+        // Load the chain of signer cert to keystore
+        for (X509Certificate c : signerCertificates)
+        {
+            certs[i++] = c;
+        }
+        //SRS_SecurityClientX509_25_010: [ This method shall load all the provided X509 certs (leaf with both public certificate and private key,
+        // intermediate certificates(if any) to the Key store. ]
+        keyStore.setKeyEntry(ALIAS_CERT_ALIAS, leafPrivateKey, password, certs);
+
+        //SRS_SecurityClientX509_25_011: [ This method shall initialize the ssl context with X509KeyManager and X509TrustManager for the keystore. ]
+        sslContext.init(kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), new SecureRandom());
+        //SRS_SecurityClientX509_25_012: [ This method shall return the ssl context created as above to the caller. ]
+        return sslContext;
     }
 }
