@@ -27,7 +27,6 @@ public class IotHubSSLContext
 {
     private SSLContext sslContext;
 
-    private static final String SSL_CONTEXT_INSTANCE = "TLSv1.2";
     private static final String TRUSTED_IOT_HUB_CERT_PREFIX = "trustedIotHubCert-";
 
     public IotHubSSLContext()
@@ -37,7 +36,7 @@ public class IotHubSSLContext
             // Only loads public certs. Private keys are in password protected keystores,
             // so they can't be retrieved in this constructor. Because no private keys are loaded,
             // this SSLContext can only be used in connections that are authenticated via symmetric keys.
-            this.sslContext = SSLContext.getInstance(SSL_CONTEXT_INSTANCE);
+            this.sslContext = SSLContext.getDefault();
 
             // Initializing the SSLContext with null keyManagers and null trustManagers makes it so the device's default
             // trusted certificates are loaded, and no private keys are loaded.
@@ -68,7 +67,7 @@ public class IotHubSSLContext
 
         TrustManagerFactory trustManagerFactory = generateTrustManagerFactory(certificates);
 
-        SSLContext sslContext = SSLContext.getInstance(SSL_CONTEXT_INSTANCE);
+        SSLContext sslContext = SSLContext.getDefault();
         sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
         return sslContext;
     }
@@ -87,7 +86,7 @@ public class IotHubSSLContext
 
         TrustManagerFactory trustManagerFactory = generateTrustManagerFactory(certificates);
 
-        SSLContext sslContext = SSLContext.getInstance(SSL_CONTEXT_INSTANCE);
+        SSLContext sslContext = SSLContext.getDefault();
         sslContext.init(null, trustManagerFactory.getTrustManagers(), new SecureRandom());
         return sslContext;
     }
