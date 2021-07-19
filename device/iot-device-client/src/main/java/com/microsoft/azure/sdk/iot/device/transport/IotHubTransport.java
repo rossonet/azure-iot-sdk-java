@@ -30,7 +30,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 @Slf4j
 public class IotHubTransport implements IotHubListener
 {
-    private static final int MAX_MESSAGES_TO_SEND_PER_THREAD = 10;
+    private static int maxMessagesToSendPerThread = 10;
 
     // For tracking the state of this layer in particular. If multiplexing, this value may be CONNECTED while a
     // device specific state is DISCONNECTED_RETRYING. If this state is DISCONNECTED_RETRYING, then the multiplexed
@@ -574,7 +574,7 @@ public class IotHubTransport implements IotHubListener
             return;
         }
 
-        int timeSlice = MAX_MESSAGES_TO_SEND_PER_THREAD;
+        int timeSlice = maxMessagesToSendPerThread;
 
         while (this.connectionStatus == IotHubConnectionStatus.CONNECTED && timeSlice-- > 0)
         {
@@ -1784,5 +1784,16 @@ public class IotHubTransport implements IotHubListener
             //Device key is present, sas token will be renewed upon re-opening the connection
             transportException.setRetryable(true);
         }
+    }
+    
+    public static int getMaxMessagesToSendPerThread() {
+    	return maxMessagesToSendPerThread;
+    }
+    
+    public static void setMaxMessagesToSendPerThread(int maxMessagesToSendPerThread) {
+    	if (maxMessagesToSendPerThread<10) {
+    		throw new IllegalArgumentException("max messages to send per thread cannot be less than 10");
+    	}
+    	this.maxMessagesToSendPerThread = maxMessagesToSendPerThread;
     }
 }
