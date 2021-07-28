@@ -428,6 +428,7 @@ public final class DeviceIO implements IotHubConnectionStatusChangeCallback
             }
             this.sendTaskScheduler.shutdown();
             this.sendTaskScheduler=null;
+            this.sendTaskScheduler=Executors.newScheduledThreadPool(1);
             this.sendTaskScheduler.scheduleAtFixedRate(this.sendTask, 0,
                     this.sendPeriodInMilliseconds, TimeUnit.MILLISECONDS);
         }
