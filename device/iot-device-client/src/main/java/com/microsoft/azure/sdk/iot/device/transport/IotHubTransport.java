@@ -1791,8 +1791,8 @@ public class IotHubTransport implements IotHubListener
     }
     
     public static void setMaxMessagesToSendPerThread(int maxMessagesToSendPerThread) {
-    	if (maxMessagesToSendPerThread<10) {
-    		throw new IllegalArgumentException("max messages to send per thread cannot be less than 10");
+    	if (maxMessagesToSendPerThread<1) {
+    		throw new IllegalArgumentException("max messages to send per thread cannot be less than 1");
     	}
     	IotHubTransport.maxMessagesToSendPerThread = maxMessagesToSendPerThread;
     }
