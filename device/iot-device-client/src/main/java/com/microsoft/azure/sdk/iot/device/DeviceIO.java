@@ -427,8 +427,7 @@ public final class DeviceIO implements IotHubConnectionStatusChangeCallback
                 throw new IOException("transport send task not set");
             }
             this.sendTaskScheduler.shutdown();
-            this.sendTaskScheduler=null;
-            this.sendTaskScheduler=Executors.newScheduledThreadPool(1);
+            this.sendTaskScheduler = Executors.newScheduledThreadPool(1);
             this.sendTaskScheduler.scheduleAtFixedRate(this.sendTask, 0,
                     this.sendPeriodInMilliseconds, TimeUnit.MILLISECONDS);
         }
